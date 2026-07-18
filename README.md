@@ -3,8 +3,8 @@
 ## How we run 10 AI agents 24/7 on a single laptop — and how you can too.
 
 > **Author**: Jason Wang (王磊), Founder & Architect @ QuanXun IoT (FusionConnect)
-> **License**: MIT | **Date**: 2026-07-18
-> **GitHub**: [github.com/quanxun/ai-middle-platform-playbook](https://github.com/quanxun/ai-middle-platform-playbook)
+> **License**: MIT | **Date**: 2026-07-18 | **Version**: v2.0
+> **GitHub**: [github.com/leijasonw/ai-middle-platform](https://github.com/leijasonw/ai-middle-platform)
 
 ---
 
@@ -52,7 +52,7 @@ willingness to try something unconventional.
 ```text
   Conventional wisdom:  "Hire people for each function."
   Our thesis:           "Build agents for each function."
-  
+
   Key assumption: if an agent can handle 80% of routine work in a domain,
   one human + 10 agents = 10-person team output at 1% of the cost.
 ```
@@ -80,60 +80,15 @@ This constraint turned out to be our biggest advantage — it forced simplicity.
  └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Phase 1: Exploration (2024-2025)
-
-We tried everything: LangChain (too abstract), AutoGPT (too unreliable),
-Dify (too heavy for a single laptop), OpenAI Assistants API (vendor lock-in
-concerns). Each taught us something, but none stuck.
-
-### Phase 2: The breakthrough — Hermes Agent (Dec 2025)
-
-We discovered [Hermes Agent](https://hermes-agent.nousresearch.com) by
-Nous Research. Three things stood out:
-
-1. **Multi-profile by design** — each agent is a separate profile with its
-   own system prompt, model config, and tool set
-2. **MCP-native** — Model Context Protocol support out of the box, meaning
-   any MCP-compatible tool plugs right in
-3. **Lightweight** — runs on a single machine, no Docker required
-
-This was the foundation we'd been looking for.
-
-### Phase 3: The 10-agent ramp (Apr-Jun 2026)
-
-Once we had the foundation, each new agent took about 2-3 days to configure
-and tune:
-
-- **default**: General assistant, knowledge base queries
-- **caiwuzhushou** (财务): Financial analysis, FP&A, bookkeeping
-- **zhuli** (助理): Meeting minutes, document generation
-- **stockexpert**: Investment research, market analysis
-- **manager**: Business strategy, executive decision support
-- **productexpert**: UX research, competitive analysis
-- **engineeringdir**: Code review, architecture, infrastructure
-- **marketingdir**: Content creation, social media strategy
-- **ecommerceops**: E-commerce operations, ASO
-- **operationsdir**: Supply chain management
-
-Each agent runs as a separate Hermes profile, connected to Feishu as a
-distinct bot identity — so users talk to "财务助手" or "市场总监" as if
-they're different people.
-
-### Phase 4: Production validation (1 month+)
-
-The system has been running 24/7 for over a month, handling real business
-requests from 8 AM to 10 PM daily. The uptime: essentially 100%
-(the laptop hasn't crashed once).
-
 ---
 
 ## 3. Architecture: The six-layer model
 
-After building this, we can describe the architecture in six clean layers:
-
 ```text
 ╔══════════════════════════════════════════════════════════════════════════════════╗
 ║                AI Middle Platform · Six-Layer Architecture                       ║
+║         "The model is the brain. The MCPs are the hands.                         ║
+║          The platform is the team."                                             ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 ┌─ Layer 1: User Access ──────────────────────────────────────────────────────────┐
@@ -146,209 +101,133 @@ After building this, we can describe the architecture in six clean layers:
            │                  │                  │
            ▼                  ▼                  ▼
 ┌─ Layer 2: Gateway Layer ────────────────────────────────────────────────────────┐
-│                                                                                  │
-│    Ports 13000-13009 → Each maps to one agent profile                           │
-│    Framework: Hermes Gateway v0.18.2                                            │
-│    Isolation: Each gateway runs as an independent process                        │
+│  Ports 13000-13009 → Each maps to one agent profile                             │
+│  Framework: Hermes Gateway v0.18.2 · Isolation: Independent process per agent   │
 └─────────────────────────────────────────────────────────────────────────────────┘
            │
            ▼
 ┌─ Layer 3: Agent Layer ──────────────────────────────────────────────────────────┐
-│                                                                                  │
-│    10 profiles × 43+ agency roles × 188 global agencies                          │
-│    Each profile: system prompt + model config + tool grant                       │
+│  10 profiles × 43+ agency roles × 188 global agencies                            │
+│  Each: system prompt + model config + tool grant + Feishu identity              │
 └─────────────────────────────────────────────────────────────────────────────────┘
            │
            ▼
 ┌─ Layer 4: MCP Tool Layer ───────────────────────────────────────────────────────┐
 │                                                                                  │
-│    11 MCP Servers · 66+ tools                                                    │
-│    AnySearch(web), Scrapling(crawl), Qdrant(search), Feishu(docs),               │
-│    GitHub(code), Tushare(finance), Draw.io(diagrams), OpenMontage(video),        │
-│    Agent-Reach(social), AI Berkshire(invest), codebase-memory(code intel)        │
+│  ╔══════════════════════════════════════════════════════════════════════════╗   │
+│  ║  MCP Factory (Core Innovation)                qxmcp CLI                  ║   │
+│  ║  ┌───────────────────────────────────────────────────────────────────┐ ║   │
+│  ║  │  scan → discover     install → deploy    verify → sandbox-test    │ ║   │
+│  ║  │  bind  → agent-link  update  → upgrade   status → health-check    │ ║   │
+│  ║  └───────────────────────────────────────────────────────────────────┘ ║   │
+│  ╚══════════════════════════════════════════════════════════════════════════╝   │
+│                                                                                  │
+│  11 MCP Servers · 66+ tools                                                      │
+│  AnySearch(web), Scrapling(crawl), Qdrant(search), Feishu(docs),                 │
+│  GitHub(code), Tushare(finance), Draw.io(diagrams), OpenMontage(video),          │
+│  Agent-Reach(social), AI Berkshire(invest), codebase-memory(code intel)          │
 └─────────────────────────────────────────────────────────────────────────────────┘
            │
            ▼
 ┌─ Layer 5: Knowledge & Data Layer ───────────────────────────────────────────────┐
 │                                                                                  │
-│    Qdrant vector DB · 109,305 entries · 2560-dim embeddings                     │
-│    Local Ollama (qwen3-embedding:4b) · 4 automated ingestion pipelines          │
-│    Two-stage review: candidate → published                                      │
+│  Qdrant vector DB · 109,305 entries · 2560-dim embeddings · 4 pipelines         │
+│  Local Ollama (qwen3-embedding:4b) · Two-stage review: candidate→published       │
+│                                                                                  │
+│  ┌────────────────────────────────────────────────────────────────────────┐    │
+│  │  Knowledge Auto-Growth System                                          │    │
+│  │                                                                         │    │
+│  │  Chat → Agent captures → Qdrant writes → All agents see → Organization │    │
+│  │  learns                                                                 │    │
+│  │                                                                         │    │
+│  │  "Today a colleague asks about expenses → Agent answers from KB.        │    │
+│  │   Tomorrow CEO changes market strategy → KB auto-updates → 3 days      │    │
+│  │   later all agents know."                                               │    │
+│  └────────────────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────────────┘
            │
            ▼
-┌─ Layer 6: Model Layer ──────────────────────────────────────────────────────────┐
+┌─ Layer 6: Model Layer (Hybrid Architecture) ─────────────────────────────────────┐
 │                                                                                  │
-│    DeepSeek Flash → Daily tasks, 3 RPM free tier                                 │
-│    DeepSeek Pro   → Complex analysis, 60 RPM                                    │
-│    GLM-5.2        → Chinese content, marketing (Zhipu API)                      │
-│    Total monthly API cost: ~$50-100                                              │
+│    ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐             │
+│    │  Local (Free)     │  │  Cloud (Cheap)    │  │  Cloud (Power)   │             │
+│    │  ─────────────── │  │  ─────────────── │  │  ─────────────── │             │
+│    │  Ollama           │  │  DeepSeek Flash   │  │  DeepSeek Pro    │             │
+│    │  qwen3-embed:4b   │  │  3 RPM free tier  │  │  60 RPM          │             │
+│    │  Sensitive data    │  │  Daily tasks      │  │  Complex analysis│             │
+│    │  Zero API cost     │  │  $50-100/month    │  │  On-demand       │             │
+│    └──────────────────┘  └──────────────────┘  └──────────────────┘             │
+│                                                                                  │
+│    ┌──────────────────┐                                                         │
+│    │  Cloud (Special)  │    Smart Routing:                                       │
+│    │  ─────────────── │      Knowledge → Local (free, private)                 │
+│    │  GLM-5.2          │      Daily use → DS Flash (cheap, fast)                │
+│    │  Chinese content  │      Deep analysis → DS Pro (powerful, on-demand)      │
+│    │  Zhipu API        │      Chinese content → GLM-5.2 (specialized)           │
+│    └──────────────────┘                                                         │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-This is not the only architecture. It's the one that emerged from our constraint
-(one laptop, zero cloud, minimal cost). Different constraints would produce
-different architectures. The important thing is the **layering principle**:
-each layer has a clear responsibility and can be swapped independently.
-
-### Key architectural decisions (and why)
-
-**ADR-1: Hermes Agent over Dify/Coze/OpenClaw**
-- Needed: multi-profile isolation, MCP protocol, open source
-- Hermes: ✓ Profile-native ✓ MCP-native ✓ Lightweight
-- Dify: Docker-heavy, single-tenant
-- Coze: Closed source, no self-hosting
-- OpenClaw: Security concerns (341 malicious plugins found in ClawHub)
-
-**ADR-2: Multiple single-agent Gateways over shared Gateway**
-- Each agent gets its own port (13000-13009)
-- Trade-off: More ports, but complete isolation
-- A crash in one agent never affects another
-- Win: 1-month uptime, zero cascading failures
-
-**ADR-3: Qdrant over Milvus/Weaviate**
-- Qdrant runs on a laptop (single binary, no JVM)
-- Milvus needs Docker + etcd + minio — overkill
-- Weaviate needs Docker — adds complexity
-- Qdrant: `docker run qdrant/qdrant` and done
-
-**ADR-4: Dual model strategy (DeepSeek + GLM)**
-- DeepSeek Flash for 80% of daily work (cheap, fast)
-- DeepSeek Pro for complex analysis
-- GLM-5.2 for Chinese-language marketing content
-- Total monthly API bill: ~$50-100
-
-**ADR-5: All tools through MCP protocol**
-- Every MCP server is a standard interface
-- Tools are swappable without changing agent code
-- Adding a new tool = adding a new MCP server
-
 ---
 
-## 4. What we learned
+## 4. What we learned (6 hard-won lessons)
 
 ### 4.1 The tools matter more than the model
 
 When we started, we thought the LLM was the differentiator. Wrong. The tools
-are what make an agent useful.
+are what make an agent useful. Without tools, a model is an expensive text
+generator. With tools, it's an autonomous worker.
 
-```text
-  Model without tools = expensive text generator
-  Model with tools    = autonomous worker
-  
-  Our most used tools, ranked by call frequency:
-  1. Scrapling (web crawling) — every agent uses it
-  2. Feishu (document operations) — 4 agents core dependency
-  3. Tushare (financial data) — 3 agents core dependency
-  4. AnySearch (web search) — universal fallback
-  5. Qdrant (knowledge retrieval) — default agent primary
-```
+Our most-used tools, ranked by call frequency: Scrapling (web crawling) →
+Feishu (documents) → Tushare (finance) → AnySearch (web search) → Qdrant (KB).
 
-**Advice**: Pick your MCP servers carefully. A $0 tool (free API) that saves
-10 minutes/day is more valuable than a $100/month model with slightly
-better reasoning.
+**Advice**: Pick your MCP servers carefully. A $0 tool that saves 10 minutes/day
+is more valuable than a $100/month model with slightly better reasoning.
 
 ### 4.2 One agent per domain, not one agent for everything
 
-The single most impactful decision was giving each business domain its own
-dedicated agent with its own Feishu bot identity.
+The single most impactful decision: giving each business domain its own
+dedicated agent with its own Feishu bot identity. Users naturally adapt —
+they know to ask "财务助手" for expenses, "市场总监" for content.
 
-Why this works:
-
-```text
-  General assistant:       Tries to do everything, masters nothing.
-  Dedicated agents:        Each one has a narrow focus and deep expertise.
-  
-  Users naturally adapt:   They know to ask "财务助手" for expenses,
-                           "市场总监" for content, "ceo" for strategy.
-                           
-  No prompt bloat:         Each system prompt stays under 2000 tokens.
-                           A general-purpose agent would need 10,000+.
-```
+No prompt bloat. Each system prompt stays under 2,000 tokens.
 
 **Advice**: Fight the urge to build one super-agent. Build many small ones.
-The coordination overhead is negligible; the focus gain is enormous.
 
 ### 4.3 Most of the cost is in API calls, not hardware
 
 ```text
-  Monthly costs:
-    ThinkPad laptop:           $0 (already owned)
-    DeepSeek Flash API:       $30-60
-    DeepSeek Pro API:         $10-20  (sporadic use)
-    GLM-5.2 API:              $10-20  (marketing only)
-    Tushare Pro (finance):    $3-7
-    Electricity:               $5
-    ─────────────────────────────────
-    Total:                    ~$58-112/month
+  Monthly costs:   Laptop $0 | DS Flash $30-60 | DS Pro $10-20 | GLM $10-20
+  Total: ~$58-112/month — 95-98% cheaper than hiring humans
 ```
 
-The hardware cost is a rounding error. The operating cost is the API calls.
-And even at peak usage, it's 95-98% cheaper than hiring humans.
-
-**Advice**: Optimize for token usage, not compute. Use the cheapest model
-that gets the job done. Reserve expensive models for tasks that genuinely
-need them.
+**Advice**: Optimize for token usage, not compute.
 
 ### 4.4 The knowledge base is more important than the agent
 
-We have 109,305 knowledge entries. They cover:
+We have 109,305 knowledge entries. We spent more time building the ingestion
+pipeline (4 automated sources, 30-second indexing) than tuning any single agent.
 
-- Product documentation
-- Technical specifications
-- Customer conversation history
-- Industry reports
-- Competitor analysis
-- Internal SOPs
-- Financial records
-
-When a new hire (or a new agent) joins, their effectiveness is directly
-proportional to the knowledge they can access. We spent more time building
-the ingestion pipeline (4 automated sources, 30-second indexing) than
-tuning any single agent.
-
-**Advice**: Start building your knowledge base before you write a single
-line of agent code. The agent is the interface; the knowledge is the value.
+When the knowledge base reflects the organization, every new agent hits the
+ground running.
 
 ### 4.5 Fallback chains are non-negotiable
 
-```text
-  Primary: DeepSeek Flash
-    ↓ (HTTP 429 / timeout)
-  Fallback: GLM-5.2
-    ↓ (still fails)
-  Response: "Service temporarily unavailable"
-  
-  Every step: logged, monitored, alerted.
-```
-
-In one month of production, we've hit the primary model rate limit about
-5-10 times. Each time, the fallback kicked in silently. Users never noticed.
-
-**Advice**: Configure fallback chains on day one, not after the first outage.
+Primary model fails → backup model → graceful error. In one month of production,
+the primary model has hit rate limits ~5-10 times. Each time, the fallback
+kicked in silently. Users never noticed.
 
 ### 4.6 You don't need Kubernetes (and probably don't need Docker either)
 
-This is the most controversial take. Our entire system runs:
+Our entire system runs on WSL: a VBS script on Windows boot starts 10 gateway
+processes and 7 background services. Zero containerization. Docker would add
+complexity without value for a single-machine deployment.
 
-- On WSL (Windows Subsystem for Linux) on a laptop
-- Started by a VBS script on Windows boot
-- 10 gateway processes, 7 background services
-- Zero containerization
-
-Docker would add complexity without value for a single-machine deployment.
-We'll add Docker Compose when we productize for multi-machine deployments,
-but for now, raw processes are simpler and more debuggable.
-
-**Advice**: Don't let infrastructure complexity eat your innovation budget.
-Add architectural overhead only when your constraints demand it.
+**Advice**: Add architectural overhead only when your constraints demand it.
 
 ---
 
 ## 5. The proof: BOSS system rewrite (33 days)
-
-The most concrete validation of this approach: rebuilding our entire IoT
-operations platform (BOSS system).
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────────┐
@@ -365,45 +244,205 @@ operations platform (BOSS system).
 │  No API docs                   │  Swagger + API.md                              │
 │  No idempotency                │  idempotencyKey + retry_count                   │
 │  No audit trail                │  TraceFilter + async logging                    │
-└────────────────────────────────┴────────────────────────────────────────────────┘
+└────────────────────────────────┴───────────────────────────────────────────────┘
 ```
 
-**Key stat**: 11 months → 33 days. Not because AI writes code faster (it does),
-but because AI agents removed coordination overhead. No standups. No spec
-reviews. No pull request waiting. The architect describes the task, the agents
-execute, and the review loop is hours instead of days.
+11 months → 33 days. Not because AI writes code faster, but because AI agents
+removed coordination overhead — no standups, no spec reviews, no PR waiting.
 
 ---
 
-## 6. Comparison: How we stack against the alternatives
+## 6. Seven pillars: What makes this platform irreplaceable
 
-### 6.1 OpenHarness (HKUDS, 14.5K⭐)
+After a month in production, we've identified seven pillars that form our
+**unreplicable competitive moat**. Any competitor can copy one pillar, but
+no one can copy how they work together:
 
-[OpenHarness](https://github.com/HKUDS/OpenHarness) is excellent. It's what
-we'd use if we were starting today and only needed a single-agent system.
-Their "The model is the agent; the code is the harness" is a beautiful
-formulation.
+```text
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                    │
+│  Pillar ①  MCP Factory — One-command tool discovery                                │
+│  ────────────────────────────────────────────────                                   │
+│                                                                                    │
+│  Competitors:    Manually configure each MCP (engineer required)                   │
+│  Our approach:   qxmcp scan → discover / install → deploy / bind → link            │
+│                                                                                    │
+│  Why it matters:                                                                   │
+│    SMEs have no DevOps. We let them "install a weather MCP" with one sentence.     │
+│    Others write shell scripts. We run one command.                                  │
+│                                                                                    │
+│  OpenHarness inspiration:                                                          │
+│    Their MCP client is clean. We extend it into a full package manager with        │
+│    sandbox-verify, auto-config, batch-update, and security signatures.             │
+│                                                                                    │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                    │
+│  Pillar ②  Enterprise Knowledge Base — Locally built, automatically grown         │
+│  ────────────────────────────────────────────────                                   │
+│                                                                                    │
+│  Competitors:    RAG = upload PDF → chunk → search → one-off Q&A                  │
+│  Our approach:   Chat → Agent captures → Qdrant writes → All agents see → Org learns│
+│                                                                                    │
+│  Why it matters:                                                                   │
+│    Others have a "document search engine". We have an "organizational nervous      │
+│    system." A colleague talks to finance agent → knowledge auto-recorded.          │
+│    Next week someone asks the same question → agent already knows.                 │
+│                                                                                    │
+│  OpenHarness inspiration:                                                           │
+│    Their MEMORY.md is elegant for single-agent. We scale it: vector DB,            │
+│    multi-source pipelines, two-stage review, cross-agent sharing.                  │
+│                                                                                    │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                    │
+│  Pillar ③  Open-source model pulling (Ollama layer)                               │
+│  ────────────────────────────────────────────────                                   │
+│                                                                                    │
+│  qxmodel pull llama3 → run locally → zero API cost → data never leaves             │
+│                                                                                    │
+│  The value is not Ollama itself — it's the "one-command pull + configure + switch" │
+│  experience. SMEs are terrified of data leaving their premises. We solve that.    │
+│                                                                                    │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                    │
+│  Pillar ④  Hybrid local-cloud model architecture                                   │
+│  ────────────────────────────────────────────────                                   │
+│                                                                                    │
+│  Sensitive data  → Local Ollama (free, private)                                   │
+│  Daily tasks     → DeepSeek Flash (cheap, 3 RPM free tier)                        │
+│  Complex analysis → DeepSeek Pro (powerful, on-demand)                            │
+│  Chinese content → GLM-5.2 (specialized, 60 RPM)                                  │
+│                                                                                    │
+│  Smart routing ensures: data security + cost optimization + capability on demand. │
+│                                                                                    │
+│  OpenHarness inspiration:                                                          │
+│    Their provider workflows (`oh setup`) guide model choice. We extend it:         │
+│    automatic model routing based on task type, data sensitivity, and cost.        │
+│                                                                                    │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                    │
+│  Pillar ⑤  Knowledge auto-precipitation — The hardest part for SMEs               │
+│  ────────────────────────────────────────────────                                   │
+│                                                                                    │
+│  4 automated sources:                                                               │
+│    · Daily chat conversations → Agent memory captures                             │
+│    · Document inbox → 30-second ingestion pipeline                                 │
+│    · Obsidian notes → auto-formatted and indexed                                   │
+│    · Manual feeds → batch import                                                   │
+│                                                                                    │
+│  What SMEs fear most: "Only Lao Wang knows."                                       │
+│  Our system makes "what Lao Wang knows" automatically become "what the             │
+│  company knows." This is not knowledge management — it's knowledge auto-healing.  │
+│                                                                                    │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                    │
+│  Pillar ⑥  Code repository & engineering (already mature)                         │
+│  ────────────────────────────────────────────────                                   │
+│                                                                                    │
+│  GitHub MCP (26 tools) + codebase-memory (15 tools)                               │
+│  Validated in BOSS rewrite: 33 days vs 11 months. Mature but not core moat.      │
+│                                                                                    │
+│  OpenHarness inspiration:                                                          │
+│    Their plugin compatibility with Claude Code ecosystem → we should do similar   │
+│    for Hermes profiles, allowing direct reuse of community Skills.                 │
+│                                                                                    │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                    │
+│  Pillar ⑦  Natural Language Platform Manager — The crown jewel                    │
+│  ────────────────────────────────────────────────                                   │
+│                                                                                    │
+│  This is where every other platform falls short.                                   │
+│                                                                                    │
+│  ┌──────────────────────────────────────────────────────────────────────────┐     │
+│  │                                                                           │     │
+│  │  User: "I need a lawyer who can review contracts."                        │     │
+│  │  System: ① Creates agent-lvshi profile                                    │     │
+│  │          ② Searches and installs legal MCPs                                │     │
+│  │          ③ Configures lawyer system prompt                                 │     │
+│  │          ④ Binds Feishu app → New "Lawyer" bot is born                    │     │
+│  │          ⑤ Replies: "✅ Lawyer agent ready. Ask me anything."             │     │
+│  │                                                                           │     │
+│  │  User: "Organize the last 3 months of customer complaints into KB."       │     │
+│  │  System: ① Scans Feishu history → extracts complaints                     │     │
+│  │          ② Auto-classifies (returns / quality / logistics)                │     │
+│  │          ③ Writes to Qdrant → tags (customer/complaint)                  │     │
+│  │          ④ Replies: "✅ 312 complaints organized and indexed."           │     │
+│  │                                                                           │     │
+│  │  User: "Switch all agents to Kimi tomorrow, it's cheaper."                │     │
+│  │  System: ① Pulls Kimi API config                                          │     │
+│  │          ② Switches all agent model providers                              │     │
+│  │          ③ Runs compatibility tests                                       │     │
+│  │          ④ Replies: "✅ Switched to Kimi. Est. 30% cost reduction."       │     │
+│  │                                                                           │     │
+│  │  User: "Show me this week's agent usage and cost."                        │     │
+│  │  System: ① Queries 10 agent logs                                          │     │
+│  │          ② Calculates token/cost per agent                                 │     │
+│  │          ③ Replies with usage report + optimization suggestions           │     │
+│  │                                                                           │     │
+│  └──────────────────────────────────────────────────────────────────────────┘     │
+│                                                                                    │
+│  Implementation:                                                                   │
+│    Agent "platform-manager" with system-level MCP tools:                           │
+│      · qxmcp        — Factory operations (scan/install/bind/update)               │
+│      · profile      — Agent creation/deletion/modification                        │
+│      · model-mgmt   — Model switching / cost monitoring                           │
+│      · knowledge    — Knowledge base operations                                   │
+│      · system-stats  — Monitoring and reporting                                   │
+│                                                                                    │
+│  The ultimate moat:                                                                │
+│    Everyone requires "technical people to configure."                              │
+│    We say: "CEO just says 'I need a lawyer' → system builds it."                  │
+│    We're not selling a tool. We're selling a CTO that you can talk to.            │
+│                                                                                    │
+│  OpenHarness inspiration:                                                          │
+│    Their ohmo "personal agent" concept is the closest thing. We extend it:         │
+│    ohmo is a personal assistant. Our platform-manager is an organizational        │
+│    architect — it builds, configures, and optimizes the entire AI team.           │
+│                                                                                    │
+└────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 7. Comparison: How we stack against the alternatives
+
+### 7.1 OpenHarness (HKUDS, 14.5K⭐)
+
+[OpenHarness](https://github.com/HKUDS/OpenHarness) is a brilliant piece of
+engineering. 11,733 lines of Python, "The model is the agent, the code is the
+harness" — a beautiful formulation. We deeply admire their work.
 
 ```text
                   OpenHarness                        QuanXun
                   ─────────────────────────────────────────────────
   Focus:          Single-agent harness                Multi-agent platform
-  Codebase:       11K lines Python                    ~500K lines (Hermes)
-  Agents:         1 + subagent spawn                  10 independent profiles  
-  Knowledge:      MEMORY.md (text file)               Qdrant (109K vectors)
-  Multi-channel:  ohmo (Feishu/Slack/TG/DC)           Feishu native (10 bots)
-  Permissions:    3-level + path rules                App-level (Feishu)
-  Dry-run:        ✅ oh --dry-run                     ❌ (planned)
-  Productized:    ❌ (open source only)                ✅ ¥9,800-58,000
+  Philosophy:     Model = Agent, Code = Harness       MCPs = Hands, Platform = Team
+  Codebase:       11K lines                           500K+ (Hermes + Platform)
+  Agents:         1 + subagent spawn                  10 independent profiles
+  MCP:            Manual config                       MCP Factory (auto-discover)
+  Knowledge:      MEMORY.md (text file)               Qdrant (109K vectors + 4 pipelines)
+  Models:         Any Anthropic/OpenAI-compatible     Hybrid local-cloud (auto-routing)
+  Self-growth:    None                                Natural Language Manager
+  Dry-run:        ✅ Excellent                        ❌ (planned — adopting!)
+  Permissions:    ✅ 3-level + path rules              ❌ (planned — adopting!)
+  Skills:         ✅ .md compatible with anthropics    Agency roles (188 global)
+                                                                                        
+  What we admire:                                                                       
+    · Code readability: 11K lines anyone can understand                              
+    · Dry-run preview: check before execute — adopting this!                         
+    · Multi-level permissions: Default/Auto/Plan + path rules — adopting this!       
+    · Skills system: pure Markdown, drop-in loading — studying for compatibility     
+    · Plugin ecosystem: Claude Code compatibility — evaluating for Hermes profiles   
+                                                                                        
+  What we do differently:                                                               
+    · Multi-agent team (not sub-agent spawn): complete isolation                    
+    · MCP Factory (not manual config): package manager for tools                     
+    · Hybrid local-cloud models (not single provider): data privacy + cost optimal   
+    · Knowledge auto-growth (not text file): 109K vectors, 4 pipelines, 2-stage review
+    · Natural language manager (not CLI config): CEO-friendly self-growing system    
+    · Productized delivery (not just open-source): priced, packaged, supported       
 ```
 
-**What we admire**: The dry-run preview. The clean permissions model. The
-code readability (11K lines!).
-
-**What we do differently**: Multi-agent independence, enterprise knowledge
-management, professional MCP tools, product packaging.
-
-### 6.2 Dify / Coze
+### 7.2 Dify / Coze
 
 ```text
                   Dify / Coze                         QuanXun
@@ -411,25 +450,24 @@ management, professional MCP tools, product packaging.
   Philosophy:     Workflow builder                    Agent team builder
   Architecture:   LLM app platform                    Multi-agent gateway
   Multi-agent:    Workflow DAG                        Independent profiles
-  Knowledge:     RAG pipeline                         Vector DB + pipelines
-  Deployment:    Docker Compose                       Bare metal (WSL)
-  Cost:           ¥3,000-5,000/mo SaaS                $50-100/mo API
+  Knowledge:     RAG pipeline                         Vector DB + auto-growth
+  Deployment:    Docker Compose                       Bare metal / Docker (optional)
+                                                                                        
+  Key difference:                                                                       
+    Dify/Coze = Build an LLM application.                                              
+    QuanXun    = Hire an AI team.                                                       
+    Apps get outdated. Teams grow.                                                      
 ```
 
-Dify and Coze are great for building LLM-powered workflows. We use a
-fundamentally different model: instead of building workflows, we hire
-agents. Each agent is autonomous, has its own identity, and grows with
-use.
+### 7.3 Claude Code / Cursor
 
-### 6.3 Claude Code / Cursor
-
-These are interactive coding assistants — powerful but single-user and
-single-session. Our agents run 24/7, interact through chat, and handle
-non-coding domains (finance, marketing, operations).
+Interactive coding assistants — powerful but single-user and single-session.
+Our agents run 24/7, interact through chat, and handle non-coding domains
+(finance, marketing, operations).
 
 ---
 
-## 7. The playbook: How to replicate this
+## 8. The playbook: How to replicate this
 
 ### Step 1: Choose your agent framework
 
@@ -437,72 +475,108 @@ We use **Hermes Agent** by Nous Research. Alternatives worth evaluating:
 
 | Framework | When to choose |
 |-----------|---------------|
-| Hermes Agent | Multi-profile, MCP-native, lightweight |
-| OpenHarness | Single-agent, hackable, Python |
-| Claude Code | Best model (Claude), but single-user |
-| Dify | Workflow-heavy, visual builder |
+| Hermes Agent | Multi-profile, MCP-native, lightweight — our choice |
+| OpenHarness | Single-agent, hackable Python, beautiful codebase |
+| Claude Code | Best model (Claude), but single-user only |
+| Dify | Workflow-heavy, visual builder, Docker-only |
 
 ### Step 2: Set up your knowledge base
 
-This is the foundation. You need three things:
+This is the foundation — more important than any agent. You need:
 
-1. **A vector database**: We use Qdrant. Install is `docker run qdrant/qdrant`
-2. **An embedding model**: We use qwen3-embedding:4b via local Ollama
+1. **A vector database**: Qdrant. Install: `docker run qdrant/qdrant`
+2. **An embedding model**: qwen3-embedding:4b via local Ollama
 3. **An ingestion pipeline**: Auto-process new documents into the vector DB
 
-**Don't skip the ingestion pipeline.** Manual upload is a dead end.
+**Don't skip the ingestion pipeline.** Manual upload dies within a week.
 
 ### Step 3: Define your agent profiles
 
-For each business function, define:
-- **Agent profile**: System prompt, role description
-- **Model**: Cheapest model that works for this domain
-- **Tools**: MCP servers this agent needs
-- **Knowledge filters**: What subset of the knowledge base to search
+For each business function:
+- System prompt + role description
+- Model: cheapest that works for this domain
+- MCP tools needed
+- Knowledge base filters
 
 Start with 3 agents. Add more only after the first 3 are stable.
 
-### Step 4: Connect to your communication platform
+### Step 4: Connect to communication platforms
 
-We use **Feishu (Lark)** because we're in China. If you're elsewhere:
-- Telegram for technical teams
-- Slack for enterprise
-- Discord for community
+We use Feishu (Lark). For global teams: Telegram / Slack / Discord.
+**One bot identity per agent** — they should feel like different people.
 
-The key is: **one bot identity per agent**. Users should feel like they're
-talking to different people, not a single chatbot with multiple personalities.
+### Step 5: Monitor, iterate, and let it grow
 
-### Step 5: Monitor and iterate
-
-Track:
-- **Cost per agent** (API tokens used)
-- **Response time** (how fast does the agent reply)
-- **Fallback rate** (how often does the primary model fail)
-- **User satisfaction** (do people actually use it)
-
-Iterate on the agents people use most. Kill the ones nobody uses.
+Track: cost per agent / response time / fallback rate / user satisfaction.
+Iterate on agents people use most. Kill the ones nobody uses.
+Configure the **Natural Language Manager** — then the system grows itself.
 
 ---
 
-## 8. What's next
+## 9. What OpenHarness taught us (and what we're adopting)
 
-We're productizing this into a deliverable:
+We studied OpenHarness deeply. Here's what we're bringing into our platform:
 
 ```text
-  AI Middle Platform Base:
-    Standard ($9,800)   — 3 agents, basic MCP, 5K knowledge
-    Professional ($28K) — 8 agents, full MCP, 50K knowledge
-    Enterprise ($58K)   — Unlimited agents, custom MCP, unlimited knowledge
+┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                          │
+│  1. Dry-run preview (adopting)                                          │
+│     oh --dry-run → preview agent actions before execution               │
+│     We're adding: qx preview "Ask engineer agent to refactor module X"  │
+│     → shows what tools would be called, what files would be changed,    │
+│       what the estimated cost would be, without executing anything.     │
+│                                                                          │
+│  2. Three-level permission model (adopting)                             │
+│     Default / Auto / Plan + path-level rules                            │
+│     Our current model: Feishu permissions + approval smart mode          │
+│     Our upgrade: Tiered agent permissions — Standard (interactive),     │
+│     Autonomous (sandbox), Read-Only (review)                            │
+│                                                                          │
+│  3. Skills as .md files (evaluating)                                    │
+│     OpenHarness loads .md skills on-demand                              │
+│     We have Agency roles (188 global). Can we bridge the two?           │
+│     Plan: Make our Agency roles compatible with Skills .md format       │
+│     → Community can write skills in a single .md file                  │
+│                                                                          │
+│  4. Code readability as a feature (philosophy)                          │
+│     Their 11K lines inspired us: "What if our MCP factory was just      │
+│     5K lines of clean Python?" — We're designing qxmcp with this goal.  │
+│                                                                          │
+│  5. Provider workflows (extending)                                      │
+│     oh setup → guided model selection                                   │
+│     We're extending: qx setup → guided agent team setup                 │
+│     "How many agents? What domains? Local or cloud? Any special tools?" │
+│     → 5 minutes to a running AI team.                                   │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
-
-But honestly, that's just our business. The real reason we're publishing this
-is: **we think this model works for many teams**. If you're a small company
-with one good engineer and a laptop, you can build what we built. The only
-question is whether you start today.
 
 ---
 
-## Appendix: The MCP tool ecosystem we use
+## 10. What's next: Open-source & productization roadmap
+
+```text
+┌──────────────────────────────────────────────────────────────────────────┐
+│  2026                                                                     │
+│  7月 ✅ Architecture docs, ADR, OpenHarness comparison                   │
+│  8月 ⬜ Hermes submodule + upgrade system                                │
+│      ⬜ qxmcp CLI v0.1 (scan/install/bind/status)                       │
+│      ⬜ install.sh one-command deploy                                    │
+│  9月 ⬜ qxmcp v0.2 (sandbox-verify/update/registry)                     │
+│      ⬜ Dry-run preview mode (inspired by OpenHarness)                   │
+│      ⬜ Three-level permissions (inspired by OpenHarness)                 │
+│      ⬜ Web Admin GUI MVP                                                │
+│  10月⬜ 2-3 customer deliveries                                          │
+│      ⬜ Community launch (HN/V2EX/Reddit)                                │
+│  11月⬜ SaaS subscription launch                                         │
+│      ⬜ Natural Language Manager v1.0                                    │
+│      ⬜ MCP marketplace (community contributions)                         │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Appendix: MCP tool ecosystem
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────────┐
@@ -515,33 +589,33 @@ question is whether you start today.
 │  Feishu 📋           15 tools   Document CRUD, tables, messaging               │
 │  GitHub 🐙           26 tools   PR/Issue/Code/Search management                │
 │  Tushare 📊          22 tools   Stock data, futures, macro indicators          │
-│  Draw.io ✏️          ~3 tools   Architecture diagrams, circuit diagrams        │
-│  OpenMontage 🎬      52 tools   AI video production (script→素材→剪辑→成片)    │
+│  Draw.io ✏️          ~3 tools   Architecture diagrams                          │
+│  OpenMontage 🎬      52 tools   AI video production                             │
 │  Agent-Reach 🌐      ~10 tools  Social media scraping (13+ platforms)          │
-│  AI Berkshire 🏦     19 Skills  Value investing research (Buffett+Munger)      │
-│  codebase-memory 🧠  15 tools   Code intelligence (semantic search, trace)     │
+│  AI Berkshire 🏦     19 Skills  Value investing research                        │
+│  codebase-memory 🧠  15 tools   Code intelligence (semantic search)            │
 │                                                                                 │
+│  All MIT or Apache-2.0. All runnable on a single laptop.                       │
 └────────────────────────────────────────────────────────────────────────────────┘
 ```
-
-All MIT or Apache-2.0 licensed. All runnable on a single laptop.
 
 ---
 
 ## Acknowledgments
 
 - **Nous Research** for Hermes Agent — the best multi-profile agent framework
-- **HKUDS** for OpenHarness — a beautiful formulation of what a harness should be
-- The creators of each MCP server we use — this ecosystem is what makes this possible
-- Our partners **流金科技** and **浩瀚深度** for being the first to validate this approach
+- **HKUDS** for OpenHarness — a beautiful formulation of what a harness should be.
+  We learned from your dry-run, permissions model, and code clarity.
+- The creators of each MCP server we use — this ecosystem is what makes everything possible
+- Our partners **流金科技** and **浩瀚深度** for being the first validators
 
 ---
 
+> *"The model learns. The MCPs act. The platform scales."*
+>
 > *"Others draw architectures. We build teams."*
 >
-> *"Others go to the cloud. We use what's on our desk."*
->
-> *"Others run demos. We run production."*
+> *"Others sell tools. We give you a CTO you can talk to."*
 >
 > — Jason Wang, QuanXun IoT
 >
