@@ -3,7 +3,7 @@
 ## How we run 10 AI agents 24/7 on a single laptop — and how you can too.
 
 > **Author**: Jason Wang (王磊), Founder & Architect @ QuanXun IoT (FusionConnect)
-> **License**: MIT | **Date**: 2026-07-18 | **Version**: v2.0
+> **License**: MIT | **Date**: 2026-07-18 | **Version**: v2.2
 > **GitHub**: [github.com/leijasonw/ai-middle-platform](https://github.com/leijasonw/ai-middle-platform)
 
 ---
@@ -165,12 +165,32 @@ This constraint turned out to be our biggest advantage — it forced simplicity.
 │    │  Chinese content  │      Deep analysis → DS Pro (powerful, on-demand)      │
 │    │  Zhipu API        │      Chinese content → GLM-5.2 (specialized)           │
 │    └──────────────────┘                                                         │
+│                                                                                  │
+│  ┌──────────────────────────────────────────────────────────────────────────┐  │
+│  │  The real stack: what's actually running on the laptop                    │  │
+│  │                                                                          │  │
+│  │  10 independent Hermes processes. Each one in its own terminal:           │  │
+│  │    hermés serve --profile default       --port 13000                     │  │
+│  │    hermés serve --profile caiwuzhushou  --port 13001                     │  │
+│  │    hermés serve --profile zhuli         --port 13002                     │  │
+│  │    ... (10 in total, ports 13000-13009)                                   │  │
+│  │                                                                          │  │
+│  │  NOT Docker. NOT a wrapper. NOT a SaaS shell. NOT WorkBuddy.             │  │
+│  │  Each agent IS the Hermes process. The Feishu bot is just its channel.    │  │
+│  │                                                                          │  │
+│  │  Models in use (all via API, no local inference except embeddings):      │  │
+│  │    platform-director → DeepSeek V4 Pro (the one writing this)            │  │
+│  │    default/caiwu/zhuli/product/ecom/ops → DeepSeek V4 Flash              │  │
+│  │    stockexpert/manager → DeepSeek V4 Pro                                  │  │
+│  │    engineeringdir/marketingdir → GLM-5.2 (Zhipu API)                     │  │
+│  └──────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                  │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 4. What we learned (6 hard-won lessons)
+## 4. What we learned (7 hard-won lessons)
 
 ### 4.1 The tools matter more than the model
 
